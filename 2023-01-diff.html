@@ -113,9 +113,6 @@
         式(1.2)~式(1.4)をprogramに落とし込めば、\(u\)の数値解が求まる。
         今回は、\(\varDelta x=0.05,\varDelta t=0.01\)での\(t=0,25,50,75,100\)における\(u\)の分布図を画像で出力するprogramをpythonで作成し、結果を得た。
         図表出力にはmatplotlibを使った。
-        <p>
-          なお、課題のプログラムは(1.4)とは少し異なり、2階偏微分を前進偏差分
-        </p>
       </p>
       <p>
         programを<a href="#fig1.2">図1.2</a>に、プログラムの変数と式(1.2)~(1.4)中の変数の対応表を<a href="#fig1.1">表1.1</a>に示す。
@@ -207,7 +204,7 @@ plt.plot(x, u[100])</code></pre>
          <p>
            <label>\(\varDelta t\)</label>
            <br>
-           <input id="s2-canvas-dt" type="range" min="0.001" max="0.1" step="0.001" value="0.01"></input>
+           <input id="s2-canvas-dt" type="range" min="0.0001" max="0.1" step="0.0001" value="0.01"></input>
          </p>
          <p>
            <label>\(\varDelta x\)</label>
@@ -362,7 +359,15 @@ const callback = () => {
     const [xlist, ulist] = calc(kappa, dt, dx, 1, 1);
     const app = document.getElementById("s2-canvas");
     app.textContent = "";
-    render(app, [0, 25, 50, 75, 100].map(
+    // 全体の0,1/4,1/2,3/4,1あたりの時刻のstepを取り出す
+    const tlist = [
+      0,
+      Math.floor(ulist.length / 4),
+      Math.floor(ulist.length / 2),
+      Math.floor(3 * ulist.length / 4),
+      ulist.length - 1,
+    ];
+    render(app, tlist.map(
       (t) => xlist.map((x, i) => [x, ulist[t][i]])
     ));
     document.getElementById("s2-canvas-error").hidden = true;
@@ -380,7 +385,7 @@ const callback = () => {
     );
   } finally {
     katex.render(
-      `\\kappa=${kappa.toFixed(3)}, \\varDelta t=${dt.toFixed(3)}, \\varDelta x=${dx.toFixed(3)}, \\alpha=${(kappa * dt / (dx ** 2)).toFixed(3)}`,
+      `\\kappa=${kappa.toFixed(3)}, \\varDelta t=${dt.toFixed(4)}, \\varDelta x=${dx.toFixed(3)}, \\alpha=${(kappa * dt / (dx ** 2)).toFixed(3)}`,
       document.getElementById("s2-canvas-info"),
       { throwOnError: false }
     );
