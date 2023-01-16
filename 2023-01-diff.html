@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>応用数学1：差分法</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.3/new.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css" integrity="sha384-vKruj+a13U8yHIkAyGgK1J3ArTLzrFGBbBc0tDp4ad/EyewESeXE/Iv67Aj8gKZ0" crossorigin="anonymous">
+    <script type="module">
+        import renderMathInElement from "https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/contrib/auto-render.mjs";
+        
+        renderMathInElement(document.body);
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/github.min.css">
+    <script type="module">
+    import hljs from "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/es/highlight.min.js";
+    //  and it's easy to individually load additional languages
+    hljs.highlightAll();
+    </script>
+    
+    <style>
+      /* light themeを強制する */
+      body {
+          --nc-tx-1: #000000;
+          --nc-tx-2: #1A1A1A;
+          --nc-bg-1: #FFFFFF;
+          --nc-bg-2: #F6F8FA;
+          --nc-bg-3: #E5E7EB;
+          --nc-lk-1: #0070F3;
+          --nc-lk-2: #0366D6;
+          --nc-lk-tx: #FFFFFF;
+          --nc-ac-1: #79FFE1;
+          --nc-ac-tx: #0C4047;
+      }
+      figure :is(figcaption,img) {
+        text-align: center;
+      }
+      pre {
+        border: solid 1px gray;
+        border-radius: 4px;
+        padding: 2px;
+        overflow-x: auto;
+      }
+      code {
+        font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+      }
+      .footnote {
+        vertical-align: top;
+        font-size: 0.7em;
+      }
+      aside {
+        font-size: 0.7em;
+      }
+      .error {
+        color: red;
+      }
+      .tooltip {
+        position: absolute;
+        text-align: center;
+        width: auto;
+        height: auto;
+        padding: 5px;
+        font: 12px;
+        background: white;
+        box-shadow: 0 4px 0 rgba(0,0,0,.16);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-bottom-left-radius: 3px;
+        border-bottom-right-radius: 3px;
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>応用数学1：差分法</h1>
+    <article>
+    <section>
+    <h2>目次</h2>
+      <ul>
+        <li><a href="#s0">記号の定義</a></li>
+        <li><a href="#s1">1.差分法による拡散方程式の数値解</a></li>
+        <li><a href="#s2">2.レポート上で動く数値解析プログラム</a></li>
+        <li><a href="#s3">3.動的なレポートシステムの提案</a></li>
+      </ul>
+    </section>
+    <section id="s0">
+      <h2>記号の定義</h2>
+        前進偏差分演算子\(\frac{\eth }{\eth \bullet}\)と後進偏差分演算子\(\frac{\eth }{\eth \bullet}\)を以下のように定義する
+        $$\frac{\eth u}{\eth x}:=\frac{u(x+\varDelta x,t)-u(x,t)}{\varDelta x}$$
+        $$\frac{\eth u}{\eth t}:=\frac{u(x,t+\varDelta t)-u(x,t)}{\varDelta t}$$
+        $$\frac{u\eth}{\eth x}:=\frac{u(x,t)-u(x-\varDelta x,t)}{\varDelta x}$$
+        $$\frac{u\eth}{\eth t}:=\frac{u(x,t)-u(x,t-\varDelta t)}{\varDelta t}$$
+    </section>
+    <section id="s1">
+      <h2>1.差分法による拡散方程式の数値解</h2>
+      <p>
+        以下に示す拡散方程式(1.1)を差分化して\(u(x,t)\)の数値解を求める。初期条件と境界条件は(1.2),(1.3)とする。
+          $$\frac{\partial u}{\partial t}=\kappa\frac{\partial^2u}{{\partial x}^2}\tag{1.1}$$
+          $$\begin{rcases}u(0,t)=1\\u(1,t)=0\end{rcases}\tag{1.2}$$
+          $$\kappa=0.1\tag{1.3}$$
+        この式で表せるモデルは多数あるが、例えば長さ\(1\)で、左端の温度が常に\(1\)、右端の温度が常に\(0\)に調整されている、熱拡散率\(\kappa\)の金属棒の温度分布などが挙げられる。
+      </p>
+      <p>
+        (1.1)の微分演算子を
+          $$\frac{\partial^2\bullet}{{\partial x}^2}\to\frac{\frac{\eth\bullet}{{\eth x}}\eth}{{\eth x}},\ \frac{\partial}{\partial t}\to\frac{\eth}{\eth t}$$
+        と置き換えて差分化すると、<a id="back-2" class="footnote" href="#footnote-2">1)</a>
+          $$\begin{align*}&\frac{\eth u}{\eth t}=|c|^2\frac{\eth^2u}{{\eth x}^2}\\&\iff u(x,t+\varDelta t)-u(x,t)=\kappa\frac{\varDelta t}{{\varDelta x}^2}(u(x+\varDelta x,t)-2u(x,t)+u(x-\varDelta x,t))\\&\iff u(x,t+\varDelta t)=\alpha u(x+\varDelta x,t)+(1-2\alpha)u(x,t)+\alpha u(x-\varDelta x,t)\tag{1.4}\end{align*}$$<a id="back-1" class="footnote" href="#footnote-1">2)</a>
+          
+          
+        となる。
+      </p>
+      <p>
+        式(1.2)~式(1.4)をprogramに落とし込めば、\(u\)の数値解が求まる。
+        今回は、\(\varDelta x=0.05,\varDelta t=0.01\)での\(t=0,25,50,75,100\)における\(u\)の分布図を画像で出力するprogramをpythonで作成し、結果を得た。
+        図表出力にはmatplotlibを使った。
+        <p>
+          なお、課題のプログラムは(1.4)とは少し異なり、2階偏微分を前進偏差分
+        </p>
+      </p>
+      <p>
+        programを<a href="#fig1.2">図1.2</a>に、プログラムの変数と式(1.2)~(1.4)中の変数の対応表を<a href="#fig1.1">表1.1</a>に示す。
+        <figure id="fig1.1">
+          $$\begin{array}{cc} \text{数式}&\text{program}\\\hline\varDelta t&\tt{dt}\\\varDelta x&\tt{dx}\\\kappa&\tt{kappa}\\\alpha&\tt{alp}\\u(x,t)&\tt{u}\\x&\tt{x}\\\hline \end{array}$$
+          <figcaption>表1.1 変数対応表</figcaption>
+        </figure>
+        <figure id="fig1.2">
+          <figcaption>図1.2 program</figcaption>
+          <pre><code class="language-python">#
+# 差分法の計算例
+#
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 入力データ
+kappa = 0.1
+t_step = 100
+n_step=20
+x_len = 1.
+dt = 0.01
+u = np.zeros((t_step+1)*(n_step+1)).reshape (t_step+1, n_step+1)
+x = np.linspace(0., x_len, n_step+1)
+
+#境界条件
+for j in range(0, t_step+1):
+    u[j][0] = 1
+
+# 差分法
+dx = x_len/n_step
+alp = kappa*dt/(dx*dx)
+
+if alp>0.5:
+    print("alp < 0.5となるように設定して下さい!")
+else:
+    for j in range(0, t_step):
+        for i in range (1, n_step):
+            u[j+1][i] = alp*u[j][i+1] + (1-2*alp)*u[j][i] + alp*u[j][i-1]
+
+plt.plot(x, u[0])
+plt.plot(x, u [25])
+plt.plot(x, u[50])
+plt.plot(x, u[75])
+plt.plot(x, u[100])</code></pre>
+        </figure>
+      </p>
+      <p>
+      <code>main.py</code>を実行して生成したグラフを図1.3に示す
+      <figure>
+        <figcaption>図1.3 <code>main.py</code><span>の実行結果</figcaption>
+        <div style="text-align: center;">
+          <img src="https://gyazo.com/8a3bdb9ddcbf64cf129582434d4882a2/thumb/1000" style="max-width: 50vw;"/>
+        </div>
+      </figure>
+      <table>
+        <caption>線色とtとの対応</caption>
+        <thead>
+          <tr><th>色</th><th>\(t\)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>青</td><td>0</td></tr>
+          <tr><td>橙</td><td>25</td></tr>
+          <tr><td>緑</td><td>50</td></tr>
+          <tr><td>赤</td><td>75</td></tr>
+          <tr><td>紫</td><td>100</td></tr>
+        </tbody>
+      </table>
+      <hr />
+      <aside id="footnote-2">2階の前進偏差分\(\frac{\eth^2\bullet}{{\eth x}^2}\)ではなく、前進と後進の偏差分の組み合わせで近似したのは、差分化によるステップのズレを抑えるためだと思われる。なお、よりズレを抑える置き換えとして、中心偏差分\(\frac{u(x+\frac12\varDelta x,t)-u(x-\frac12\varDelta x,t),t)}{\varDelta x}\)を2回適用する方法も考えられる<a class="back" href="#back-2">↩</a></aside>
+      <aside id="footnote-1">ここで、\(\alpha:=\kappa\frac{\varDelta t}{{\varDelta x}^2}\)とした<a class="back" href="#back-1">↩</a></aside>
+    </section>
+    <section id="s2">
+      <h2>2.レポート上で動く数値解析プログラム</h2>
+      <p>ここでは、実行環境を用意する事なく、レポート上で直接数値解析を行なえるUXの提案を目的とし、レポート上でリアルタイムにパラメタを調節して<a href="#s1">前章</a>の偏微分方程式の数値解をプロットするプログラムを提示する。</p>
+      <p>グラフ下部にある3つのスライダを操作すると、対応する数値解がリアルタイムにグラフに反映される。また差分法の収束条件\(\alpha<\frac12\)から外れると警告メッセージが表示されるようプログラムされている</p>
+      <p>codingにはJavascriptを用いた。ソースコードは<a id="s2-code">ここから取得</a>できる</p>
+      <figure>
+         <figcaption>
+           図2.1 プロット
+         </figcaption>
+         <div id="s2-canvas"></div>
+         <p id="s2-canvas-info"></p>
+         <p id="s2-canvas-error" class="error" hidden></p>
+         <p>
+           <label>\(\kappa\)</label>
+           <br>
+           <input id="s2-canvas-kappa" type="range" min="0.01" max="1" step="0.01" value="0.1"></input>
+         </p>
+         <p>
+           <label>\(\varDelta t\)</label>
+           <br>
+           <input id="s2-canvas-dt" type="range" min="0.001" max="0.1" step="0.001" value="0.01"></input>
+         </p>
+         <p>
+           <label>\(\varDelta x\)</label>
+           <br>
+           <input id="s2-canvas-dx" type="range" min="0.01" max="0.1" step="0.001" value="0.05"></input>
+         </p>
+         <div id="s2-canvas-tooltip" class="tooltip"></div>
+         <script type="module" id="s2-graph-code">import { select } from "https://cdn.skypack.dev/d3-selection@3.0.0";
+import {
+  scaleLinear,
+  scaleOrdinal,
+} from "https://cdn.skypack.dev/d3-scale@4.0.2";
+import {
+  axisBottom,
+  axisLeft,
+} from "https://cdn.skypack.dev/d3-axis@3.0.0";
+import { line } from "https://cdn.skypack.dev/d3-shape@3.2.0";
+import {
+  schemeCategory10
+} from "https://cdn.skypack.dev/d3-scale-chromatic@3.0.0";
+import katex from "https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.mjs";
+
+/** 
+ *
+ * @param {BaseType} root
+ * @param {[number, number][][]} datasets
+ */
+const render = (root, datasets) => {
+  // SVG領域を作成
+  const width = 400;
+  const height = 300;
+  const svg = select(root)
+    .append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`);
+ 
+  const margin = { top: 30, bottom: 60, right: 30, left: 60 };
+  // 各軸のスケール変換関数を作る
+  const xs = [];
+  const ys = [];
+  for (const list of datasets) {
+    for (const [x, y] of list) {
+      xs.push(x);
+      ys.push(y);
+    }
+  }
+  const maxX = Math.max(...xs);
+  const minX = Math.min(...xs);
+  const maxY = Math.max(...ys);
+  const minY = Math.min(...ys);
+  const xScale = scaleLinear()
+    // 目盛りの左右にいくらか余白を入れる
+    .domain([minX - (maxX - minX) / 20, maxX  + (maxX - minX) / 20])
+    .range([margin.left, width - margin.right]);
+  const yScale = scaleLinear()
+    .domain([minY - (maxY - minY) / 20, maxY  + (maxY - minY) / 20])
+    .range([height - margin.bottom, margin.top]);
+
+  // x軸を作る
+  svg.append("g")
+    .attr("transform", `translate(0, ${height - margin.bottom})`)
+    .call(axisBottom(xScale).ticks(5))
+    .append("text")
+    .attr("fill", "black")
+    .attr("x", (width - margin.left - margin.right) / 2 + margin.left)
+    .attr("y", 35)
+    .attr("text-anchor", "middle")
+    .attr("font-weight", "bold")
+    .attr("font-size", "10px")
+    .text("x");
+ 
+  // y軸を作る
+  svg.append("g")
+    .attr("transform", `translate(${margin.left}, 0)`)
+    .call(axisLeft(yScale).ticks(5))
+    .append("text")
+    .attr("fill", "black")
+    .attr("text-anchor", "middle")
+    .attr("x", -(height - margin.top - margin.bottom) / 2 - margin.top)
+    .attr("y", -35)
+    .attr("transform", "rotate(-90)")
+    .attr("font-weight", "bold")
+    .attr("font-size", "10px")
+    .text("u");
+  
+  const tooltip = select("#s2-canvas-tooltip");
+  
+  const color = scaleOrdinal(schemeCategory10);
+  // 折れ線の描画
+  // 軸のpathを選択肢しないよう、classを付けて区別する
+  svg.selectAll("path.plot")
+    .data(datasets)
+    .enter()
+    .append("path")
+    .classed("plot", true)
+    .attr("fill", "none")
+    .attr("stroke", (_, i) => color(i))
+    .attr("stroke-width", 1.5)
+    .attr("d", line()
+      .x(([x]) => xScale(x))
+      .y(([,y]) => yScale(y))
+    )
+    .on("mouseover", (_, d) => {
+      tooltip.style("visibility", "visible").html(
+        katex.renderToString(
+          `t=${datasets.indexOf(d) * 0.25}`,
+          { throwOnError: false }
+        )
+      );
+    })
+    .on("mousemove", (e) => {
+      const pRect = document.body.getBoundingClientRect();
+      tooltip.style("top", `${e.clientY - pRect.top}px`).style(
+        "left",
+        `${e.clientX - pRect.left}px`,
+      );
+    })
+    .on("mouseout", () => tooltip.style("visibility", "hidden"));
+};
+const calc = (kappa, dt, dx, tLen, xLen) => {
+  const t_step = Math.ceil(tLen / dt);
+  const x_step = Math.ceil(xLen / dx);
+  const x = [...Array(x_step + 1).keys()].map((i) => dx * i);
+ 
+  // 境界条件
+  const u = [...Array(t_step + 1)].map(() => [1, ...Array(x_step).fill(0)]);
+  
+  // 差分法
+  const alpha = kappa * dt / (dx ** 2);
+  
+  if (alpha > 0.5) {
+    throw RangeError("alpha < 0.5となるように設定して下さい!");
+  }
+  
+  for (let t = 0; t < t_step; t++) {
+    for (let x = 1; x < x_step; x++) {
+      u[t + 1][x] = alpha * u[t][x + 1] + (1 - 2 * alpha) * u[t][x] + alpha * u[t][x - 1];
+    }
+  }
+  
+  return [x, u];
+};
+// execute
+
+const kappaI = document.getElementById("s2-canvas-kappa");
+const dtI = document.getElementById("s2-canvas-dt");
+const dxI = document.getElementById("s2-canvas-dx");
+const callback = () => {
+  const kappa = parseFloat(kappaI.value);
+  const dt = parseFloat(dtI.value);
+  const dx = parseFloat(dxI.value);
+  try {
+    const [xlist, ulist] = calc(kappa, dt, dx, 1, 1);
+    const app = document.getElementById("s2-canvas");
+    app.textContent = "";
+    render(app, [0, 25, 50, 75, 100].map(
+      (t) => xlist.map((x, i) => [x, ulist[t][i]])
+    ));
+    document.getElementById("s2-canvas-error").hidden = true;
+  } catch(e) {
+    if (!(e instanceof RangeError)) {
+      throw e;
+      console.error(e);
+    }
+    const alpha = kappa * dt / (dx ** 2);
+    document.getElementById("s2-canvas-error").hidden = false;
+    katex.render(
+      `\\alpha\\text{ must be less than 0.5! Now is }${alpha.toFixed(3)}`,
+      document.getElementById("s2-canvas-error"),
+      { throwOnError: false }
+    );
+  } finally {
+    katex.render(
+      `\\kappa=${kappa.toFixed(3)}, \\varDelta t=${dt.toFixed(3)}, \\varDelta x=${dx.toFixed(3)}, \\alpha=${(kappa * dt / (dx ** 2)).toFixed(3)}`,
+      document.getElementById("s2-canvas-info"),
+      { throwOnError: false }
+    );
+  }
+}
+callback();
+kappaI.addEventListener("input", callback);
+dxI.addEventListener("input", callback);
+dtI.addEventListener("input", callback);</script>
+         <script type="module">
+           document.getElementById("s2-code").addEventListener("click", () => {
+             const code = document.getElementById("s2-graph-code").textContent;
+             const url = URL.createObjectURL(
+               new Blob([code], { type: "text/javascript;charset=UTF-8" })
+             );
+             window.open(url);
+           });
+         </script>
+       </figure>
+     </section>
+    <section id="s3">
+      <h2>3.動的なレポートシステムの提案</h2>
+      一般に、レポートは以下の下記に示すツールで作成される
+      <ul>
+        <li>Word, LibraOfficeを使ったリッチテキスト</li>
+        <li>PDFに変換した静的文書</li>
+      </ul>
+      <p>
+      HTMLとJSの表現力を用いることで、文書に直接動画や動的生成コンテンツを埋め込めるようになり、論文やレポートの表現力を大幅に拡大することが可能となる
+      </p>
+      <p>
+        なお、プレゼンテーションで用いるスライドは、アニメーションなどの動的なコンテンツを駆使したものを多く見かける。論文と違って提出する
+      </p>
+      <h3>HTML論文の利点</h3>
+      <ul>
+        <li>構造化された文章を簡単に書ける</li>
+        <li>アクセシビリティ対応</li>
+        <li>エディタが制限されない</li>
+        <li>動画や動的コンテンツを埋め込める</li>
+        <li>ほとんどの端末で閲覧できる</li>
+      </ul>
+      <h3> HTML論文の限界</h3>
+      <p>
+       もちろん、HTMLによる論文執筆には欠点もある
+       <ul>
+         <li>支援ソフトがない</li>
+         <li>悪意のあるJavaScriptが動いたとき対処できない</li>
+       </ul>
+       <p>
+       <strike>特に、セキュリティ周りが深刻である。WordやPDFでもHTMLと同様にスクリプトを組み込めるが、ファイルを開く際に警告が出るため、ある程度悪意のあるスクリプトの実行を回避できる。ところが、web browserはそのような警告を出さない。正確に書くとスクリプトの実行を抑制する機能はあるが、殆どのユーザーは無効にしているであろうことから、あまり役に立たない。</strike>調べてみたら、オフラインでもオンラインでもセキュリティ対策されているっぽい
+       </p>
+       <p>
+        オンライン上で論文を読む、つまりwebサイトを閲覧するのと同等の環境で読む場合はあまり問題にならない。通常のwebサイトと同じセキュリティ対策を施せばいいからである。このセキュリティ問題が問題になるのは、ローカル上で論文を読もうとする場合である。
+       </p>
+       <h3>結論</h3>
+       本稿では、論文やレポートをHTMLで記述することによる利点を述べた。文字と静止画のみに数百年も縛られてきたフォーマットから解放され、文字と静止画のみで論文やレポートを記述するという常識を捨て、動画やインタラクティブなグラフを埋め込むことで、より豊かな表現力を得られるのではないだろうか。
+       すでにweb上のポートフォリオや電子版の新聞記事では、動画の埋め込みはもちろん、スクロールと連動してコンテンツが動くなど、より効果的に内容を伝える手法が用いられている。
+       </p>
+    </secition>
+  </article>
+  </body>
+</html>
+
